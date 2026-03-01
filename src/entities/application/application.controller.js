@@ -6,7 +6,19 @@ import {
   updateApplicationStatus,
   updateApplication,
   deleteApplication,
+  getApplicationsByEmail,
 } from "./application.service.js";
+
+export const getMyApplicationsController = async (req, res) => {
+  try {
+    const email = req.user.email;
+    const { page, limit } = req.query;
+    const { applications, paginationInfo } = await getApplicationsByEmail({ email, page, limit });
+    generateResponse(res, 200, true, 'Your applications fetched successfully', { applications, paginationInfo });
+  } catch (error) {
+    generateResponse(res, 500, false, 'Failed to fetch your applications', null);
+  }
+};
 
 export const applyForJobController = async (req, res) => {
   try {

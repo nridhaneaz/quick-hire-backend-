@@ -36,18 +36,38 @@ export const createJobController = async (req, res) => {
       companyLogoUrl = uploaded?.secure_url || "";
     }
 
+    // Parse salary if sent as JSON string (from FormData)
+    let salary = req.body.salary;
+    if (typeof salary === 'string') {
+      try { salary = JSON.parse(salary); } catch (_) { salary = undefined; }
+    }
+
     const payload = {
       ...req.body,
       tags,
       responsibilities,
       requirements,
       companyLogo: companyLogoUrl,
+      ...(salary !== undefined && { salary }),
     };
 
     const job = await createJob(payload, userId);
     generateResponse(res, 201, true, "Job created successfully", job);
   } catch (error) {
-    generateResponse(res, 500, false, "Failed to create job", null);
+    console.error("Create job error:", error);
+    
+    // Handle validation errors specifically
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return generateResponse(res, 400, false, `Validation error: ${messages}`, null);
+    }
+    
+    // Handle cast errors (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return generateResponse(res, 400, false, `Invalid ${error.path}: ${error.value}`, null);
+    }
+    
+    generateResponse(res, 500, false, error.message || "Failed to create job", null);
   }
 };
 
@@ -70,7 +90,8 @@ export const getAllJobsController = async (req, res) => {
 
     generateResponse(res, 200, true, "Jobs fetched successfully", { jobs, paginationInfo });
   } catch (error) {
-    generateResponse(res, 500, false, "Failed to fetch jobs", null);
+    console.error("Get all jobs error:", error);
+    generateResponse(res, 500, false, error.message || "Failed to fetch jobs", null);
   }
 };
 
@@ -83,7 +104,8 @@ export const getJobByIdController = async (req, res) => {
 
     generateResponse(res, 200, true, "Job fetched successfully", job);
   } catch (error) {
-    generateResponse(res, 500, false, "Failed to fetch job", null);
+    console.error("Get job by ID error:", error);
+    generateResponse(res, 500, false, error.message || "Failed to fetch job", null);
   }
 };
 
@@ -99,6 +121,11 @@ export const updateJobController = async (req, res) => {
     if (req.body.requirements !== undefined)
       payload.requirements = normalizeArrayField(req.body.requirements) ?? [];
 
+    // Parse salary if sent as JSON string (from FormData)
+    if (payload.salary !== undefined && typeof payload.salary === 'string') {
+      try { payload.salary = JSON.parse(payload.salary); } catch (_) { delete payload.salary; }
+    }
+
     if (req.file) {
       const uploaded = await cloudinaryUpload(req.file.path, undefined, "jobs");
       payload.companyLogo = uploaded?.secure_url || "";
@@ -109,7 +136,15 @@ export const updateJobController = async (req, res) => {
 
     generateResponse(res, 200, true, "Job updated successfully", updated);
   } catch (error) {
-    generateResponse(res, 500, false, "Failed to update job", null);
+    console.error("Update job error:", error);
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return generateResponse(res, 400, false, `Validation error: ${messages}`, null);
+    }
+    if (error.name === 'CastError') {
+      return generateResponse(res, 400, false, `Invalid ${error.path}: ${error.value}`, null);
+    }
+    generateResponse(res, 500, false, error.message || "Failed to update job", null);
   }
 };
 
@@ -122,6 +157,7 @@ export const deleteJobController = async (req, res) => {
 
     generateResponse(res, 200, true, "Job archived successfully", archived);
   } catch (error) {
-    generateResponse(res, 500, false, "Failed to delete job", null);
+    console.error("Delete job error:", error);
+    generateResponse(res, 500, false, error.message || "Failed to delete job", null);
   }
 };

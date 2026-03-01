@@ -7,6 +7,7 @@ cloudinary.config({
   cloud_name: cloudinaryCloudName,
   api_key: cloudinaryApiKey,
   api_secret: cloudinarySecret,
+  secure: true, // Force HTTPS URLs
 });
 
 export const cloudinaryUpload = async (filePath, public_id, folder) => {
@@ -18,6 +19,7 @@ export const cloudinaryUpload = async (filePath, public_id, folder) => {
       resource_type: isDocument ? "raw" : "auto", 
       public_id,
       folder,
+      secure: true, // Force HTTPS URLs
     });
 
     fs.unlinkSync(filePath);

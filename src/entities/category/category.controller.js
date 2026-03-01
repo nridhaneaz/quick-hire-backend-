@@ -95,6 +95,8 @@ export const deleteCategoryController = async (req, res) => {
 
     generateResponse(res, 200, true, "Category deleted successfully", deleted);
   } catch (error) {
-    generateResponse(res, 500, false, "Failed to delete category", null);
+    // Return 400 for business-rule errors (jobs still linked), 500 for unexpected
+    const status = error.message.startsWith('Cannot delete') ? 400 : 500;
+    generateResponse(res, status, false, error.message || "Failed to delete category", null);
   }
 };

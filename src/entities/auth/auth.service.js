@@ -29,7 +29,7 @@ export const registerUserService = async ({
 export const loginUserService = async ({ email, password }) => {
   if (!email || !password) throw new Error('Email and password are required');
 
-  const user = await User.findOne({ email }).select("_id firstName lastName email role profileImage");
+  const user = await User.findOne({ email }).select("_id name email role profileImage");
 
   if (!user) throw new Error('User not found');
 
@@ -38,13 +38,17 @@ export const loginUserService = async ({ email, password }) => {
 
   const payload = { _id: user._id, role: user.role };
 
+  const accessToken  = user.generateAccessToken(payload);
+  const refreshToken = user.generateRefreshToken(payload);
+
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
+
   const data = {
     user,
-    accessToken: user.generateAccessToken(payload)
+    accessToken,
+    refreshToken,
   };
-
-  user.refreshToken = user.generateRefreshToken(payload);
-  await user.save({ validateBeforeSave: false });
 
   return data
 };

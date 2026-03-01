@@ -45,3 +45,19 @@ export const updateApplication = async ({ id, update }) => {
 export const deleteApplication = async (id) => {
   return await Application.findByIdAndDelete(id);
 };
+
+export const getApplicationsByEmail = async ({ email, page = 1, limit = 20 }) => {
+  const _page = Number(page) || 1;
+  const _limit = Number(limit) || 20;
+  const skip = (_page - 1) * _limit;
+
+  const totalData = await Application.countDocuments({ email });
+  const applications = await Application.find({ email })
+    .populate('job', 'title company location jobType companyLogo')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(_limit);
+
+  const paginationInfo = { page: _page, limit: _limit, total: totalData };
+  return { applications, paginationInfo };
+};
