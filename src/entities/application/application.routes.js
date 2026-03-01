@@ -13,7 +13,7 @@ import { verifyToken, adminMiddleware } from "../../core/middlewares/authMiddlew
 const router = express.Router();
 
 // Public: Apply — receives JSON body, parsed by global express.json()
-router.post("/", applyForJobController);
+router.post("/", verifyToken, applyForJobController);
 
 // User: view own applications (must be before /:id)
 router.get("/my-applications", verifyToken, getMyApplicationsController);
