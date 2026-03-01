@@ -54,10 +54,10 @@ export const updateCategory = async ({ id, ...payload }) => {
 };
 
 export const deleteCategory = async (id) => {
-  // Prevent deletion if any jobs (active or not) reference this category
-  const jobCount = await Job.countDocuments({ category: id });
+  // Prevent deletion only if ACTIVE jobs reference this category
+  const jobCount = await Job.countDocuments({ category: id, status: "ACTIVE" });
   if (jobCount > 0) {
-    throw new Error(`Cannot delete: ${jobCount} job(s) are linked to this category. Remove or reassign them first.`);
+    throw new Error(`Cannot delete: ${jobCount} active job(s) are linked to this category. Remove or reassign them first.`);
   }
   return await Category.findByIdAndDelete(id);
 };
